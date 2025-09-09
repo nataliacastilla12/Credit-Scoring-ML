@@ -1,4 +1,20 @@
 # Credit Risk Modeling and Interpretability Framework
+
+## Abstract
+This study designs and validates an end-to-end framework for developing credit scoring mod-
+els, overcoming the traditional dichotomy between machine learning performance and the
+need for regulatory interpretability. The methodology is distinguished by its innovations,
+including an exhaustive feature engineering and selection framework that employs multiple
+methods. This framework is complemented by a risk-based economic validation to quan-
+tify financial impact and a hybrid interpretability system (SHAP, LIME, WoE) to explain
+complex model predictions. This process was applied to develop and compare four models:
+a baseline Logistic Regression (LR), two LR variants to mitigate class imbalance, and an
+optimized XGBoost model. Results revealed that the XGBoost model achieved superior
+performance, with an AUC of 0.7012 and a default recall of 70.5%. The economic analysis
+quantified the value of this accuracy at $4.2 million USD in potential savings. This work
+not only presents a superior predictive model but offers a replicable paradigm for financial
+institutions to responsibly adopt machine learning solutions, ensuring they are robust, eco-
+nomically viable, and transparent.
 ## Thesis Project Documentation
 
 This repository contains the code and notebooks developed for a comprehensive credit risk modeling thesis, focusing on model development, validation, and interpretability techniques.
