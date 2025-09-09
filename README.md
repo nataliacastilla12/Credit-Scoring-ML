@@ -1,1 +1,217 @@
-# Credit-Scoring-ML
+# Plan for Fixing Loss Rate Calculation in Risk Metrics Function
+
+## Notes
+- User's function calculate_comprehensive_risk_metrics returns a loss rate much greater than 100% (e.g., 5000), which is incorrect for a percentage.
+- The problematic line is: grouped['loss_rate'] = (grouped['defaulted_exposure'] / grouped['total_exposure'] * 100).fillna(0)
+- Root cause: loss rate did not include LGD (Loss Given Default) in the calculation, so the metric was not actual loss but exposure to defaulted loans.
+- Fix: user reverted to original loss rate calculation (defaulted_exposure / total_exposure * 100) and adjusted reporting/visualization accordingly.
+- Current focus: User is now working on documentation, specifically describing the dataset used in the analysis.
+- Now reviewing and troubleshooting the economic value analysis figure, which appears visually odd.
+- Assistant is analyzing the data generation and plotting logic for the economic value analysis, focusing on the calculation of cumulative expected loss savings by decile and its visualization.
+- Next step: Update economic value analysis to plot the cumulative expected loss difference (cum_expected_loss) by decile (i.e., cumulative sum of expected loss for each model vs baseline, then take the difference), not just per-decil difference.
+- Discussed the theoretical implications of subtracting cumulative expected loss rather than accumulating per-decile differences: more direct interpretation, global impact, greater stability, and alignment with real-world decision cutoffs.
+- User clarified they want to use the already-calculated `cumulative_expected_loss` column from their DataFrame for plotting economic value, not recalculate it in code.
+- User is reconsidering whether to use the difference of cumulative_expected_loss directly, or to accumulate per-decile differences as in the original approach. Clarification of the preferred approach is needed before proceeding.
+- User is considering applying smoothing (media móvil o mediana móvil) to the economic value curves to make them more interpretable and reduce fluctuations.
+- Smoothing (moving average) has been implemented and visualized for the economic value curves. Next step is to interpret and document the statistical and business meaning of the smoothed results.
+- New graph and data show XGBoost achieves maximum cumulative savings (~$4.2M) at deciles 6-7, with a plateau between 60-70% approval.
+- Marginal risk increases substantially after decile 6; approving more than 60% of applicants adds significant losses, so the recommended cutoff is decile 6 (60%).
+- Documentation and recommendations should emphasize the business rationale for selecting the 60% threshold and the operational flexibility provided by the plateau between 60-70%.
+- User provided the full risk_results data structure for all models, including detailed decile_metrics for Baseline, Weighted, Undersampled, and XGBoost.
+- A summary table of model comparison metrics at decile 6 cutoff has been provided (approved loans, default rates, exposures, losses, savings, etc.).
+- Next step is to write and interpret the thesis documentation for this table in passive voice, as requested by the user.
+- Next step is to design and discuss the most effective visualizations for comparing models at the decile cutoff, using this data structure.
+- User requested to stop using pre-calculated percentages and instead calculate all metrics for model comparison directly from the raw data (loan-level data).
+- User provided detailed decile-level metrics for all four models (Baseline, Weighted, Undersampled, XGBoost) and requested help to synthesize the main results and structure a section with a summary table of key metrics.
+- User clarified they want a fluid, cohesive synthesis comparing all models by decile, recapping all analyses, and provided the full decile-level data for each model.
+- User requested that the conclusion section can be segmented and specifically asked for a table by decile of the most important metrics.
+- User questioned the choice of default rate, loss rate, and expected loss as summary metrics, and is considering whether to include net savings or revenue opportunity instead.
+- User is now considering whether including both net savings and revenue opportunity in the summary tables would create redundancy, and has asked for clarification on this point.
+- Assistant explained the mathematical relationships and recommended keeping default rate, expected loss, net savings, and interest revenue as summary metrics to avoid redundancy. User approved this metric selection and requested the tables be modified accordingly.
+- User has asked for clarification on the difference between "Net Savings First" and "Net Savings vs Baseline" in the summary tables. This distinction should be made clear in the documentation and table captions.
+- User noted that "Net Savings First" appears negative in the tables; assistant explained this is expected, as it represents the incremental net value per decile (interest revenue minus expected loss), which can be negative in low deciles due to high expected losses relative to interest revenue. This should be clarified in documentation and table captions to avoid confusion.
+- User requested to combine the economic value and cumulative risk metrics tables into a single table with two blocks (side-by-side or stacked), improving clarity and conciseness of decile-level results presentation. This combined table should be implemented and documented.
+- User requested that the combined table be reorganized so the top block includes default rate, loss rate, and approved exposure, and the bottom block includes expected loss, net savings vs baseline, and interest revenue. This new structure has now been implemented and documented in the analysis.
+- User provided corrected decile-level data for all models (Baseline, Weighted, Undersampled, XGBoost) and is revising the risk validation analysis section to ensure narrative and reported metrics (default rate, loss rate, expected loss, etc.) match the corrected data.
+- User has now provided fully corrected decile-level data tables for all four models and requested that the loss rate analysis section be updated again to match these new values.
+- User has provided all corrected decile-level tables for Baseline, Weighted, Undersampled, and XGBoost, and the summary table in the documentation must be updated accordingly.
+- During Phase 1 risk validation analysis, user observed that all four models (Baseline, Weighted, Undersampled, XGBoost) are showing identical performance in the cumulative default capture visualization. This suggests a potential issue with the decile assignment logic or score differentiation. The models should show different risk discrimination capabilities, but the visualization shows all lines overlapping perfectly, indicating they may be using the same decile boundaries or there's an error in the decile creation process.
+- The summary table and synthesis text are now being updated with the fully corrected decile-level data for all models, as per the user's latest request.
+- The English translation of the updated comparative synthesis is in progress.
+- User is reconsidering the presentation of "savings" (net savings) and has requested a review of the previous calculation and presentation logic for savings in the summary table and synthesis.
+- User has confirmed that savings should be presented as the difference in expected loss between Baseline and each model (i.e., positive values representing actual savings compared to Baseline), not the previously shown negative cumulative values. The summary table and synthesis should be updated accordingly.
+- The summary table in the documentation must be updated to present savings as the difference in expected loss between Baseline and each model (positive values), as per user request.
+- User has confirmed that the summary table should present savings as the difference in expected loss between Baseline and each model (i.e., positive values representing actual savings compared to Baseline), not the previously shown negative cumulative values.
+- The summary table in the documentation now presents "Savings vs Baseline" as the cumulative sum of expected loss differences (cumulative savings) up to each decile, as requested by the user.
+- The difference between previous and current cumulative savings values (e.g., 6.17M vs 4.44M for XGBoost at decile 6) is due to changes in the source data or the accumulation logic; the current value reflects the exact cumulative sum of expected loss differences up to the cutoff, based on the latest corrected data and table.
+- There are two ways to calculate "Savings vs Baseline": (1) as the sum of per-decile differences between Baseline and each model (previous approach), or (2) as the difference between the cumulative expected loss up to the cutoff for Baseline and each model (current/original code approach). The summary table and narrative now use method (2), which matches the code logic and gives the value of $6.17M for XGBoost at decile 6, as requested by the user.
+- To avoid contradictions, always use the cumulative savings metric (method 2: total expected loss Baseline up to cutoff minus total expected loss Model up to cutoff) in all tables, figures, and narrative text. Do not mix with per-decile sum approaches. Ensure all reported values match the summary table and code outputs.
+- In your defense, explain that the summary table (e.g., Table 5-1) shows cumulative portfolio metrics as if all loans up to the cutoff (e.g., decile 6) are approved together, while the decile-by-decile table (e.g., Table 5-2) breaks down the risk and value metrics for each decile separately. Both are valid but serve different analytical purposes.
+- For a simple explanation: Table 5-1 shows what happens if you approve everyone up to a certain risk level (like a summary snapshot), while Table 5-2 shows how each risk group (decil) contributes separately. The summary table is for big-picture decisions, the decile table is for detailed analysis.
+- If asked why the values aren't identical, explain that in theory they should be very similar if the same data and logic are used, but any significant difference suggests a difference in either the data used, the way cumulative metrics are calculated, or a possible calculation error. Consistency should be ensured by using the same approach and data source for all summary reporting. If needed, clarify which method was used and why, and state that the reported values are consistent across all tables and figures in the final version.
+- If asked about differences between table values, explain that the values in the tables represent different aspects of the data. Table 5-1 represents the cumulative portfolio metrics, while Table 5-2 represents the decile-by-decile breakdown. The values may not be identical due to differences in the data used or the way the metrics are calculated. However, the reported values are consistent across all tables and figures in the final version.
+- A new notebook named `performance_validations.ipynb` has been created for model performance validation as per user request.
+- User is now planning a section for performance validation over time, including tracking AUC, KS, and other metrics month by month, as well as model stability (e.g., bin plots over time, PSI of the score, etc.). Discussion and planning for these metrics and visualizations is required.
+- Implementation of calibration metrics (O/E, Brier Score, ECE, etc.) and their temporal tracking has been initiated. A Python file has been created and will be iteratively updated for this purpose, with all visualizations to be done in Plotly with a white background, using the provided data structure.
+- User is now working on documenting and interpreting the temporal stability of model calibration (Brier Score, O/E Ratio, ECE) over time, drafting a thesis section in English and passive voice as requested.
+- User has provided the exact color codes to use for each model in all visualizations:
+    - Baseline: #1560bd
+    - Weighted: #75caed
+    - Undersampled: #8B7EC8
+    - Xgboost: #d62728
+  These must be used in all calibration and performance plots for consistency.
+- Ensure all color assignments in code are updated to use these values for Baseline, Weighted, Undersampled, and Xgboost in all relevant functions and plots, replacing any previous color definitions.
+- **Nota importante:** Es crucial asegurarse de que todas las asignaciones de color en el código usen los valores correctos proporcionados por el usuario en todas las funciones y visualizaciones relevantes para mantener la consistencia en la presentación de los resultados.
+- New stability_utils.py and stability_plots.py modules have been created for PSI and decile distribution analysis over time, using the provided color codes and a white background for all plots.
+- All new stability and PSI visualizations must use these utilities and follow the user's color and style requirements.
+- User requested a 2x2 grid of stacked area decile distribution plots (one per model) for temporal stability analysis, using the new utilities and consistent color/style.
+- User is now planning a section for performance validation over time, including tracking AUC, KS, and other metrics month by month, as well as model stability (e.g., bin plots over time, PSI of the score, etc.). Discussion and planning for these metrics and visualizations is required.
+- Implementation of calibration metrics (O/E, Brier Score, ECE, etc.) and their temporal tracking has been initiated. A Python file has been created and will be iteratively updated for this purpose, with all visualizations to be done in Plotly with a white background, using the provided data structure.
+- [x] Document and interpret calibration results
+- User requested a new notebook and section for "Model Interpretability Framework" including initial structure and code cells for permutation importance, SHAP, PDP/ICE, and monotonicity checks, all in English and using the thesis color palette.
+- User has noted that the Model Interpretability Framework is crucial for understanding the model's behavior and decision-making process, and has requested a detailed explanation of the framework's components and their relevance to the project.
+- User wants to compare LIME and SHAP for model interpretability in the thesis and is seeking guidance on how to approach and structure this comparison.
+- The user's dataframe contains WoE (Weight of Evidence) variables, which affects interpretability: both LIME and SHAP will attribute importance to WoE-transformed features, not original raw features. Interpretations will be in terms of WoE, which is monotonic with risk but less intuitive for business users. This should be documented in the thesis and considered when comparing explanations.
+- Next step: Discuss/document how to present, interpret, and compare LIME/SHAP explanations when features are WoE, and whether to supplement with mappings back to original variables for clarity.
+- There is a technical error in the permutation importance implementation: scikit-learn's `permutation_importance` requires a fitted estimator, not a prediction function. The current code passes a lambda function, causing an InvalidParameterError. This must be fixed by either using a compatible estimator or omitting permutation importance for model score columns.
+- There is now a KeyError ('xgboost_score') in the LIME/SHAP comparison code, caused by incorrect feature selection or prediction function logic after dropping score columns. The code must be fixed to robustly handle score columns for each model.
+- There is now a TypeError in the LIME/SHAP comparison code: when calculating correlation in calculate_feature_importance, model_scores must be converted to a pandas Series to avoid the unsupported type error. This bug must be fixed for correct feature importance calculation.
+- There is now a ValueError in the LIME/SHAP comparison code: in compute_lime_explanation, the model_scores array passed for a single instance (length 1) is inconsistent with the number of LIME neighborhood samples (e.g., 5000). The prediction function must generate model scores for all perturbed samples or a workaround must be implemented for LIME to work with precomputed scores. This bug must be fixed for correct LIME explanation generation.
+- There is now a critical issue: the SHAP summary plot and comparison metrics are showing all zeros or NaN, indicating that the surrogate model approach for single-instance SHAP explanations is not producing meaningful results. The interpretability pipeline must be debugged and fixed so that SHAP and LIME produce informative, nonzero feature attributions for the selected instance.
+- There are new technical issues with SHAP visualizations: user is encountering errors when using shap.plots.bar and shap.force_plot, due to differences between old-style outputs (shap_values arrays) and new SHAP Explanation objects. The correct way to use SHAP visualizations with both precomputed scores and native models (like XGBoost) must be clarified and implemented.
+- User needs guidance on converting old-style shap_values arrays to Explanation objects for visualization, and on handling multi-class SHAP outputs.
+- [x] Ensure SHAP visualizations (bar, force, waterfall) work with both precomputed scores and native model objects; provide code for correct Explanation object creation and usage
+- [ ] Document the difference between old and new SHAP APIs, and provide adaptation guidance for the user's notebook
+- [ ] Fix TypeError in LIME/SHAP comparison code: convert model_scores to pandas Series in calculate_feature_importance
+- [ ] Fix ValueError in LIME/SHAP comparison code: ensure the prediction function in compute_lime_explanation returns scores of the correct length for LIME's perturbed samples (handle the case where model_scores is a single value versus a vector, or implement a workaround for using precomputed scores with LIME)
+- [ ] Debug and fix the SHAP/LIME interpretability pipeline so that meaningful, nonzero feature attributions are produced (current surrogate model approach results in all-zero or NaN SHAP values and metrics)
+- [ ] Provide code and step-by-step guidance for implementing the LIME vs SHAP comparison (with WoE variables) in the user's notebook
+- [ ] Fix permutation importance implementation to use a compatible estimator or adapt the approach for score columns
+- [ ] Fix KeyError in LIME/SHAP comparison code: ensure robust feature selection and prediction function logic for score columns
+- [ ] Fix TypeError in LIME/SHAP comparison code: convert model_scores to pandas Series in calculate_feature_importance
+- [x] Create and structure the new notebook for Model Interpretability Framework, including initial code cells for permutation importance, SHAP, PDP/ICE, and monotonicity checks, using thesis color/style requirements
+- [ ] Document and interpret the results of the Model Interpretability Framework, highlighting key insights and implications for the project
+- [ ] Plan and implement a structured comparison of LIME vs SHAP for model interpretability, including recommendations for thesis documentation
+  - [x] Document implications of using WoE features for interpretability (LIME/SHAP explanations in WoE space, pros/cons, and how to communicate results)
+  - [x] Provide code and step-by-step guidance for implementing the LIME vs SHAP comparison (with WoE variables) in the user's notebook
+- User requested a more fluid, uninterrupted discussion of the LIME vs SHAP global feature importance results for thesis documentation, maintaining passive voice and cohesion.
+- There are new technical issues with LIME visualizations: user is encountering import/display errors with show_in_notebook due to IPython version or environment issues. Provided alternatives: use as_html with IPython.display, save as HTML, or use as_pyplot_figure for static images. Guidance for saving and displaying LIME explanations in Jupyter was provided.
+- User requested a summary of available LIME visualizations and how to save/export them for thesis documentation. This should be documented and code examples provided.
+- [x] Document and summarize available LIME visualizations and export options for thesis documentation
+- [x] Provide code and step-by-step guidance for implementing the LIME vs SHAP comparison (with WoE variables) in the user's notebook
+- User's dataframe for WoE analysis has columns: Variable, Bin, Count, Count (%), Non-event, Event, Event rate, WoE, IV, JS.
+- User provided the list of WoE variables of interest for interpretability analysis: vars_woe_dic = [ 'loan_to_income_ratio', 'acc_open_past_24mths', 'fico_range_high', 'dti', 'home_ownership', 'all_util', 'loan_amnt', 'inq_fi', 'emp_title_final_grouped', 'bc_open_to_buy', 'mths_since_recent_inq', 'title_grouped', 'all_util', 'home_ownership']
+- Next step: Provide code and guidance for plotting WoE distributions for these variables using the user's dataframe structure.
+- WoE variable distribution visualizations are needed for the most important features identified by SHAP/LIME to complement interpretability in the thesis, as the model uses WoE-transformed features.
+- Code and guidance for plotting WoE distributions for key variables (as identified by SHAP/LIME) must be provided for thesis interpretability section.
+- [ ] Provide code and guidance for plotting WoE distributions for the most important variables using the user's dataframe structure
+- [ ] Provide code and documentation for visualizing WoE distributions of SHAP/LIME-identified key variables in the interpretability_validations section
+
+## Task List
+- [x] Analyze why loss rate calculation is returning values > 100%
+- [x] Fix the loss rate calculation so it reflects a proper percentage (0-100%)
+- [x] Validate the fix with a test case or example
+- [ ] Add dataset description and document analysis context
+- [ ] Review and improve economic value analysis figure (cumulative expected loss savings)
+  - [x] Print and inspect expected loss values by decile for each model
+  - [x] Update to plot cumulative expected loss difference by decile using the `cumulative_expected_loss` column, or clarify/implement the correct accumulation logic as per user preference
+  - [ ] Interpret and document the statistical validity and business meaning of the smoothed economic value curves, emphasizing the plateau (deciles 6-7) and rationale for a 60% approval cutoff for XGBoost
+  - [ ] Design and discuss visualizations for model comparison at decile cutoff using provided data structure
+    - [x] Implement extraction and calculation of model comparison metrics directly from raw data (not using pre-calculated percentages)
+    - [ ] Write and interpret thesis documentation for the model comparison table in passive voice
+    - [x] Implement a single combined table (two-block format) for economic value and cumulative metrics, as requested by the user
+    - [x] Reorganize the combined table so the top block contains default rate, loss rate, and approved exposure, and the bottom block contains expected loss, net savings vs baseline, and interest revenue
+- [ ] Synthesize and document main risk validation results by decile, including a summary table of key metrics for all models
+  - [x] Write a fluid, comparative synthesis of all models by decile using the provided data (no subsections, recap all analyses)
+  - [x] Update the summary table and synthesis text to match the fully corrected decile-level data for all models
+  - [ ] Finalize and review the English translation of the comparative synthesis
+  - [ ] Segment the conclusion and create a summary table by decile of key metrics
+    - [ ] Modify the summary table to use: default rate, expected loss, net savings (prominently), and interest revenue as the main metrics
+  - [ ] Update the narrative and reported metrics in the risk validation analysis section to match the corrected decile-level data for all models
+  - [ ] Update the summary table in the documentation to match the fully corrected decile-level data for all models
+  - [ ] Review and, if needed, revert to previous logic for calculating and presenting "savings" (net savings) in the summary table and synthesis, based on user preference
+  - [x] Update the summary table and synthesis to present savings as the difference in expected loss between Baseline and each model (positive values), as requested by the user
+  - [x] Ensure summary table in documentation presents savings as Baseline minus model expected loss (positive values)
+  - [x] Clarify that 'Savings vs Baseline' now shows cumulative savings
+  - [x] Clarify the reason for the change in cumulative savings values (e.g., 6.17M vs 4.44M)
+- [ ] Plan and implement performance validation over time:
+  - [x] Discuss and select time-based metrics to track (AUC, KS, etc.)
+  - [x] Implement tracking and plotting of AUC, KS, and other selected metrics by month
+  - [x] Document and interpret calibration results
+  - [ ] Plan and implement model stability analysis (e.g., bin plots over time, PSI)
+  - [ ] Visualize and interpret stability metrics (e.g., PSI trends, bin drift)
+    - [x] Implement stability_utils.py for PSI and decile binning utilities
+    - [x] Implement stability_plots.py for PSI and decile distribution visualizations (heatmap, stacked area)
+    - [ ] Use and document these modules in the performance validation notebook, ensuring all colors and styles match user requirements
+    - [ ] Implement and document a 2x2 grid of stacked area decile distribution plots (one per model) for temporal stability analysis
+- [x] Create and structure the new notebook for Model Interpretability Framework, including initial code cells for permutation importance, SHAP, PDP/ICE, and monotonicity checks, using thesis color/style requirements
+- [ ] Document and interpret the results of the Model Interpretability Framework, highlighting key insights and implications for the project
+- [ ] Plan and implement a structured comparison of LIME vs SHAP for model interpretability, including recommendations for thesis documentation
+  - [x] Document implications of using WoE features for interpretability (LIME/SHAP explanations in WoE space, pros/cons, and how to communicate results)
+  - [x] Provide code and step-by-step guidance for implementing the LIME vs SHAP comparison (with WoE variables) in the user's notebook
+- User requested a more fluid, uninterrupted discussion of the LIME vs SHAP global feature importance results for thesis documentation, maintaining passive voice and cohesion.
+- There are new technical issues with LIME visualizations: user is encountering import/display errors with show_in_notebook due to IPython version or environment issues. Provided alternatives: use as_html with IPython.display, save as HTML, or use as_pyplot_figure for static images. Guidance for saving and displaying LIME explanations in Jupyter was provided.
+- User requested a summary of available LIME visualizations and how to save/export them for thesis documentation. This should be documented and code examples provided.
+- [x] Document and summarize available LIME visualizations and export options for thesis documentation
+- [x] Provide code and step-by-step guidance for implementing the LIME vs SHAP comparison (with WoE variables) in the user's notebook
+- User's dataframe for WoE analysis has columns: Variable, Bin, Count, Count (%), Non-event, Event, Event rate, WoE, IV, JS.
+- User provided the list of WoE variables of interest for interpretability analysis: vars_woe_dic = [ 'loan_to_income_ratio', 'acc_open_past_24mths', 'fico_range_high', 'dti', 'home_ownership', 'all_util', 'loan_amnt', 'inq_fi', 'emp_title_final_grouped', 'bc_open_to_buy', 'mths_since_recent_inq', 'title_grouped', 'all_util', 'home_ownership']
+- Next step: Provide code and guidance for plotting WoE distributions for these variables using the user's dataframe structure.
+- WoE variable distribution visualizations are needed for the most important features identified by SHAP/LIME to complement interpretability in the thesis, as the model uses WoE-transformed features.
+- [ ] Provide code and guidance for plotting WoE distributions for the most important variables using the user's dataframe structure
+
+## Task List
+- [x] Analyze why loss rate calculation is returning values > 100%
+- [x] Fix the loss rate calculation so it reflects a proper percentage (0-100%)
+- [x] Validate the fix with a test case or example
+- [ ] Add dataset description and document analysis context
+- [ ] Review and improve economic value analysis figure (cumulative expected loss savings)
+  - [x] Print and inspect expected loss values by decile for each model
+  - [x] Update to plot cumulative expected loss difference by decile using the `cumulative_expected_loss` column, or clarify/implement the correct accumulation logic as per user preference
+  - [ ] Interpret and document the statistical validity and business meaning of the smoothed economic value curves, emphasizing the plateau (deciles 6-7) and rationale for a 60% approval cutoff for XGBoost
+  - [ ] Design and discuss visualizations for model comparison at decile cutoff using provided data structure
+    - [x] Implement extraction and calculation of model comparison metrics directly from raw data (not using pre-calculated percentages)
+    - [ ] Write and interpret thesis documentation for the model comparison table in passive voice
+    - [x] Implement a single combined table (two-block format) for economic value and cumulative metrics, as requested by the user
+    - [x] Reorganize the combined table so the top block contains default rate, loss rate, and approved exposure, and the bottom block contains expected loss, net savings vs baseline, and interest revenue
+- [ ] Synthesize and document main risk validation results by decile, including a summary table of key metrics for all models
+  - [x] Write a fluid, comparative synthesis of all models by decile using the provided data (no subsections, recap all analyses)
+  - [x] Update the summary table and synthesis text to match the fully corrected decile-level data for all models
+  - [ ] Finalize and review the English translation of the comparative synthesis
+  - [ ] Segment the conclusion and create a summary table by decile of key metrics
+    - [ ] Modify the summary table to use: default rate, expected loss, net savings (prominently), and interest revenue as the main metrics
+  - [ ] Update the narrative and reported metrics in the risk validation analysis section to match the corrected decile-level data for all models
+  - [ ] Update the summary table in the documentation to match the fully corrected decile-level data for all models
+  - [ ] Review and, if needed, revert to previous logic for calculating and presenting "savings" (net savings) in the summary table and synthesis, based on user preference
+  - [x] Update the summary table and synthesis to present savings as the difference in expected loss between Baseline and each model (positive values), as requested by the user
+  - [x] Ensure summary table in documentation presents savings as Baseline minus model expected loss (positive values)
+  - [x] Clarify that 'Savings vs Baseline' now shows cumulative savings
+  - [x] Clarify the reason for the change in cumulative savings values (e.g., 6.17M vs 4.44M)
+- [ ] Plan and implement performance validation over time:
+  - [x] Discuss and select time-based metrics to track (AUC, KS, etc.)
+  - [x] Implement tracking and plotting of AUC, KS, and other selected metrics by month
+  - [x] Document and interpret calibration results
+  - [ ] Plan and implement model stability analysis (e.g., bin plots over time, PSI)
+  - [ ] Visualize and interpret stability metrics (e.g., PSI trends, bin drift)
+    - [x] Implement stability_utils.py for PSI and decile binning utilities
+    - [x] Implement stability_plots.py for PSI and decile distribution visualizations (heatmap, stacked area)
+    - [ ] Use and document these modules in the performance validation notebook, ensuring all colors and styles match user requirements
+    - [ ] Implement and document a 2x2 grid of stacked area decile distribution plots (one per model) for temporal stability analysis
+- [x] Create and structure the new notebook for Model Interpretability Framework, including initial code cells for permutation importance, SHAP, PDP/ICE, and monotonicity checks, using thesis color/style requirements
+- [ ] Document and interpret the results of the Model Interpretability Framework, highlighting key insights and implications for the project
+- [ ] Plan and implement a structured comparison of LIME vs SHAP for model interpretability, including recommendations for thesis documentation
+  - [x] Document implications of using WoE features for interpretability (LIME/SHAP explanations in WoE space, pros/cons, and how to communicate results)
+  - [x] Provide code and step-by-step guidance for implementing the LIME vs SHAP comparison (with WoE variables) in the user's notebook
+- User requested a more fluid, uninterrupted discussion of the LIME vs SHAP global feature importance results for thesis documentation, maintaining passive voice and cohesion.
+- There are new technical issues with LIME visualizations: user is encountering import/display errors with show_in_notebook due to IPython version or environment issues. Provided alternatives: use as_html with IPython.display, save as HTML, or use as_pyplot_figure for static images. Guidance for saving and displaying LIME explanations in Jupyter was provided.
+- User requested a summary of available LIME visualizations and how to save/export them for thesis documentation. This should be documented and code examples provided.
+- [x] Document and summarize available LIME visualizations and export options for thesis documentation
+- [x] Provide code and step-by-step guidance for implementing the LIME vs SHAP comparison (with WoE variables) in the user's notebook
+- User's dataframe for WoE analysis has columns: Variable, Bin, Count, Count (%), Non-event, Event, Event rate, WoE, IV, JS.
+- User provided the list of WoE variables of interest for interpretability analysis: vars_woe_dic = [ 'loan_to_income_ratio', 'acc_open_past_24mths', 'fico_range_high', 'dti', 'home_ownership', 'all_util', 'loan_amnt', 'inq_fi', 'emp_title_final_grouped', 'bc_open_to_buy', 'mths_since_recent_inq', 'title_grouped', 'all_util', 'home_ownership']
+- Next step: Provide code and guidance for plotting WoE distributions for these variables using the user's dataframe structure.
+- WoE variable distribution visualizations are needed for the most important features identified by SHAP/LIME to complement interpretability in the thesis, as the model uses WoE-transformed features.
+- [ ] Provide code and guidance for plotting WoE distributions for the most important variables using the user's dataframe structure
+
+## Current Goal
+Implement and document 2x2 decile stability grid plots
