@@ -33,77 +33,9 @@ ENV/
 venv_py3.11/
 myenv/
 ds_env/
-
-# Jupyter Notebook
-.ipynb_checkpoints
-
-# Mac OS
-.DS_Store
-
-# Large data files
-*.csv
-*.csv.gz
-dataset/
-
-# IDE specific files
-.idea/
-.vscode/
-*.swp
-*.swo
-
-# Temporary files
-*.log
-*.tmp
-
-# Environments
-.env
-.venv
-env/
-venv/
-ENV/
 env.bak/
 venv.bak/
 
-echo "*.csv" >> .gitignore
-echo "*.csv.gz" >> .gitignore
-echo "dataset/" >> .gitignore
-
-
-cd ~/temp_credit_risk
-cat > .gitignore << 'EOL'
-# Byte-compiled / optimized / DLL files
-__pycache__/
-*.py[cod]
-*$py.class
-
-# Distribution / packaging
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-
-# Virtual environments
-.env
-.venv
-env/
-venv/
-ENV/
-venv_py3.11/
-myenv/
-ds_env/
-
 # Jupyter Notebook
 .ipynb_checkpoints
 
@@ -114,6 +46,21 @@ ds_env/
 *.csv
 *.csv.gz
 dataset/
+data/
+*.parquet
+*.pickle
+*.pkl
+feature_eng/data_modeling/*.txt
+
+# Model files (pueden ser muy grandes)
+*.joblib
+*.h5
+*.hdf5
+models/pkl_models/
+feature_eng/binning_pkl/
+
+# Databricks files
+.databricks/
 
 # IDE specific files
 .idea/
@@ -124,4 +71,3 @@ dataset/
 # Temporary files
 *.log
 *.tmp
-EOL
